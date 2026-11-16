@@ -547,7 +547,7 @@ class ImageTitleFactory():
 
         # fadeIn album art
         # alpha = 20
-        alpha = 10
+        alpha = 5
         while alpha < 120 and self.run_flag:
             self._fade_step(img, alpha)
             time.sleep(self.ui_refresh)
