@@ -1,0 +1,100 @@
+# Options reconnues par la version moOde de PeppyMeter.
+# Ce fichier n'est qu'un exemple : copiez les lignes utiles dans la section indiquee
+# de votre config.txt ou de votre meters.txt (PeppyMeter ignore les options qu'il ne connait pas).
+# Les valeurs ci-dessous sont les valeurs exemple.
+
+# ---------------------------------------------------------------------------
+# config.txt, section [current] options standard de PeppyMeter
+# ---------------------------------------------------------------------------
+ meter = random                 # compteur unique, "random", ou liste "a,b,c" (option standard de PeppyMeter)
+ random.meter.interval = 60     # secondes entre deux changements (option standard de PeppyMeter)
+ random.change.title = False    # avec "random" ou une liste : changer de compteur a chaque nouveau morceau
+ start.animation = False        # animation a l'ouverture et a la fermeture de la fenetre (SDL2)
+ color.depth = 32
+ position.type = center         "center", ou "custom" avec position.x et position.y
+ position.x = 0
+ position.y = 0
+# ---------------------------------------------------------------------------
+# extention de config.txt, section [current]
+# ---------------------------------------------------------------------------
+font.path = /usr/local/share/fonts	# répertoire des fonts
+font.light = /Lato-Light.ttf		# nom du fichier font light
+font.regular = /Lato-Regular.ttf	# nom du fichier font regular
+font.bold = /Lato-Bold.ttf		# nom du fichier font bold
+
+# ---------------------------------------------------------------------------
+# meters.txt  dans la section de chaque vu-mètre options standard de PeppyMeter
+# ---------------------------------------------------------------------------
+[NMcIntosh]
+meter.type = circular
+channels = 2
+ui.refresh.period = 0.033
+bgr.filename = McIntosh_1600x600_bgr.png
+fgr.filename = McIntosh_1600x600_fgr.png
+indicator.filename = McIntosh_1600x600_needle.png
+steps.per.degree = 4
+start.angle = 53
+stop.angle = -48
+distance = 207
+left.origin.x = 420
+left.origin.y = 480
+right.origin.x = 1215
+right.origin.y = 480
+meter.x = 0
+meter.y = 0
+screen.bgr = McIntosh.jpg
+
+# ---------------------------------------------------------------------------
+# extension de meters.txt option standard de moode_peppymeter
+# ---------------------------------------------------------------------------
+# Paramètres généraux
+config.extend = True / False 		# True : active les options / False ou paramètre absent : désactive les options
+meter.visible  = True / False		# False : n'affiche que la pochette, les textes et le spectromètre
+meter.fade = True        		# fondu entre deux vu-metres ; False = changement immediat
+
+# Polices
+font.size.light	= 25			# taille de la font light en pixel
+font.size.regular= 30			# taille de la font regular en pixel
+font.size.bold = 35			# taille de la font bold en pixel
+font.size.digi = 40			# taille de la font digi en pixel (pour le temps restant)
+font.color = 255,255,255		# couleur des fonts (R,V,B)
+
+# Pochette
+albumart.pos = 739,472			# position album Art x,y en pixel
+albumart.dimension = 111,127		# dimension album Art x,y en pixel 
+albumart.mask =				# forme de la pochette (fichier masque .PNG)
+albumart.border	= 2			# encadrement album Art (en nb de pixel)
+
+# textes Album / titre / artiste 
+playinfo.center	= True			# paramètre par défaut des informations (True :  centré )
+playinfo.text.center = True / False	# paramètre par défaut des informations :(True : texte centré )
+playinfo.maxwidth = 616			# paramètre par défaut des informations : longueur max du texte (en pixel)
+
+# texte titre
+playinfo.title.pos = 45,528,regular	# position du titre  "x,y,style" avec style = light, regular ou bold
+playinfo.title.color =	0,0,0		# couleur du titre (R,V,B)
+playinfo.title.maxwidth	= 300		# longueur max du titre (en pixel)
+
+# texte artiste
+playinfo.artist.pos = 45,528,regular	# position de l'artiste "x,y,style" avec style = light, regular ou bold
+playinfo.artist.color =	0,0,0		# couleur de l'artiste (R,V,B)
+playinfo.artist.maxwidt = 300		# longueur max de l'artiste (en pixel)
+
+# texte Album
+playinfo.album.pos = 5,580,light	# position du titre de l'album "x,y,style" avec style = light, regular ou bold (si paramètre absent , l'album est ajouté après l'artiste)
+playinfo.album.color = O,0,0		# couleur du titre de l'album (R,V,B)
+playinfo.album.maxwidth	= 616		# longueur max du titre de l'album (en pixel)
+
+# Format du fichier (flac / MP3...)
+playinfo.type.pos			# position Format du fichier (icone.svg)
+playinfo.type.color			# couleur Format du fichier (R,V,B)
+playinfo.type.dimension			# dimension Format du fichier
+
+# Fréquence d'échantillonnage
+playinfo.samplerate.pos	= 945,528,bold	# position de la fréquence d'échantillonnage 
+playinfo.samplerate.maxwidth = 200	# longueur max de la fréquence d'échantillonnage (en pixel)
+
+# Temps restant
+time.remaining.pos = 1372,528		# position du compteur de temps restant
+time.remaining.color = 4,58,159		# couleur du compteur de temps restant (R,V,B) (bascule systématiquement  en rouge à 10 sec)
+
