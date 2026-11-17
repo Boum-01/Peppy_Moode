@@ -1,1 +1,1 @@
-Put Icon that represent File Type (Mp3, Flac...) in this folder. Icon must be SVG
+folder for Icon that represent File Type (Mp3, Flac...). Icon must be SVG
