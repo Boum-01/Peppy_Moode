@@ -1,6 +1,5 @@
-# Adaptation pour moOde audio, dérivée de volumio_albumart.py
+﻿# Adaptation pour moOde audio, dérivée de volumio_albumart.py
 # (Copyright 2021 PeppyMeter for Volumio by 2aCD)
-# # (Copyright 2026 PeppyMeter for Moode by Boum)
 #
 # Ce module remplace le thread AlbumartAnimator basé sur socket.io par un
 # thread qui surveille le fichier de métadonnées de moOde (LCD.TXT, ou plus
@@ -12,6 +11,16 @@
 # moode_time_poller.py), qui interroge MPD directement et n'est démarré
 # que si le skin utilise TIME_REMAINING_POS. Dépendance : python-mpd2.
 #
+# Version corrigée :
+#  - suppression du breakpoint() oublié
+#  - ajout de init_time() / render_time() (appelées mais absentes)
+#  - imports manquants (requests, cairosvg optionnel)
+#  - chargement des polices robuste (chemins, valeurs None, police digitale)
+#  - URL de pochette adaptée à moOde, avec délai d'expiration et gestion d'erreur
+#  - recherche des icônes de format dans le dossier local "format-icons"
+#  - verrous pour limiter les dessins simultanés sur l'écran pygame
+#  - recoloration des icônes sans boucle pixel par pixel
+#  - robustesse (valeurs None, dimensions absentes, exceptions dans les threads)
 
 import io
 import os
@@ -48,9 +57,9 @@ DEFAULT_ALBUMART_PATH = "/images/default-album-cover.png"  # pochette si aucune 
 URL_SAFE_CHARS = "/:%?&=+,;@!$'()*~#[]"                 # '%' conservé : pas de double encodage
 HTTP_TIMEOUT = (3, 10)                                  # (connexion, lecture) en secondes
 DEFAULT_FONT_DIR = '/usr/local/share/fonts'
-LEGACY_VOLUMIO_ICON_DIR = '/opt/peppy_moode/format-icons'
+LEGACY_VOLUMIO_ICON_DIR = '/volumio/http/www3/app/assets-common/format-icons'
 DIGI_FONT_NAMES = ('DSEG7Classic-Light.ttf', 'DSEG7Classic-Italic.ttf')
-DIGI_FONT_DIRS = ('/opt/peppy_moode/fonts',)        # en plus du dossier "fonts" du module
+DIGI_FONT_DIRS = ('/home/pi/peppy_moode/fonts',)        # en plus du dossier "fonts" du module
 
 
 def pil_to_surface(img):
@@ -67,7 +76,7 @@ class AlbumartAnimator(Thread):
     """ Provides show albumart in a separate thread - version moOde """
 
     def __init__(self, util, meter_config_volumio, metadata_file=DEFAULT_MOODE_METADATA_FILE,
-                 mpd_host="localhost", mpd_port=6600, base_url=DEFAULT_BASE_URL):
+                 mpd_host="localhost", mpd_port=6600, base_url=DEFAULT_BASE_URL, meter_offset=None):
         """ Initializer
 
         :param util: utility class
@@ -76,6 +85,7 @@ class AlbumartAnimator(Thread):
         :param mpd_host: hôte MPD, utilisé uniquement si TIME_REMAINING_POS est configuré
         :param mpd_port: port MPD, utilisé uniquement si TIME_REMAINING_POS est configuré
         :param base_url: URL du serveur web de moOde, pour télécharger les pochettes
+        :param meter_offset: (meter_x, meter_y) : décalage du compteur dans l'écran, lu sur le compteur actif
         """
         Thread.__init__(self)
 
@@ -94,6 +104,7 @@ class AlbumartAnimator(Thread):
         self.mpd_host = mpd_host
         self.mpd_port = mpd_port
         self.base_url = base_url
+        self.meter_offset = meter_offset
         self.title_factory = None
         self.metadata_source = None
         self.time_poller = None
@@ -111,7 +122,7 @@ class AlbumartAnimator(Thread):
         if self.meter_section[EXTENDED_CONF] != True:
             return None
         try:
-            tf = ImageTitleFactory(self.util, self.meter_config_volumio, self.base_url)
+            tf = ImageTitleFactory(self.util, self.meter_config_volumio, self.base_url, self.meter_offset)
             tf.load_fonts()      # charge les polices pour les infos titre
             tf.init_surfaces()   # copie les surfaces propres en backup
             return tf
@@ -251,7 +262,7 @@ class AlbumartAnimator(Thread):
         # Voir MpdTimePoller, démarré séparément dans run().
 
     def _build_play_info(self, meta):
-        """ Convertit les champs currentsong.TXT de moOde vers le format de dict
+        """ Convertit les champs LCD.TXT de moOde vers le format de dict
         attendu par ImageTitleFactory.get_title_data(), initialement écrit
         pour le payload pushState de Volumio.
 
@@ -292,12 +303,13 @@ class AlbumartAnimator(Thread):
 class ImageTitleFactory():
     """ Dessine la pochette, les infos de titre et le temps restant """
 
-    def __init__(self, util, meter_config_volumio, base_url=DEFAULT_BASE_URL):
+    def __init__(self, util, meter_config_volumio, base_url=DEFAULT_BASE_URL, meter_offset=None):
         """ Initializer
 
         :param util: utility class
         :param meter_config_volumio: configuration étendue (pochette, textes, polices...)
         :param base_url: URL du serveur web de moOde
+        :param meter_offset: (meter_x, meter_y) lu sur le compteur actif ; None : valeurs de meters.txt
         """
 
         self.run_flag = True
@@ -307,7 +319,7 @@ class ImageTitleFactory():
         self.meter_config_volumio = meter_config_volumio
         self.meter_section_meter = self.meter_config[self.meter_config[METER]]
         self.ui_refresh = self.meter_section_meter[UI_REFRESH_PERIOD]
-        self.meter_section = self.meter_config_volumio[self.meter_config[METER]]
+        self.meter_section = self._relative_section(self.meter_config_volumio[self.meter_config[METER]], meter_offset)
         self.base_url = base_url.rstrip('/')
         self.titleMem = ""
         self.file_path = os.path.dirname(os.path.realpath(__file__))
@@ -331,6 +343,26 @@ class ImageTitleFactory():
         self.draw_lock = RLock()
         self.aa_lock = Lock()
         self.text_lock = Lock()
+
+    @staticmethod
+    def _relative_section(section, meter_offset=None):
+        """ Les positions de la pochette, des textes et du temps restant sont relatives au compteur : on y ajoute
+        son decalage dans l'ecran. Ce decalage est celui que PeppyMeter applique a ses composants (attributs
+        meter_x et meter_y du compteur) ; a defaut, meter.x et meter.y de meters.txt. Sans decalage, rien ne
+        change. overlay.relative = False dans meters.txt garde des positions absolues dans l'ecran. """
+        if meter_offset is not None:
+            dx, dy = meter_offset
+        else:
+            dx, dy = section.get(METER_X) or 0, section.get(METER_Y) or 0
+        if not (dx or dy) or not section.get(OVERLAY_RELATIVE, True):
+            return section
+        shifted = dict(section)
+        for key in (ALBUMART_POS, PLAY_TITLE_POS, PLAY_ARTIST_POS, PLAY_ALBUM_POS, PLAY_TYPE_POS,
+                    PLAY_SAMPLE_POS, TIME_REMAINING_POS):
+            pos = section.get(key)
+            if pos:
+                shifted[key] = (pos[0] + dx, pos[1] + dy)
+        return shifted
 
     def init_surfaces(self):
         """ create clean surfaces as backup """

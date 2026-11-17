@@ -1,5 +1,5 @@
 # Copyright 2024 PeppyMeter for Volumio by 2aCD
-# # (Copyright 2026 PeppyMeter for Moode by Boum)
+# (Copyright 2026 PeppyMeter for Moode by Boum)
 # 
 # This file is part of PeppyMeter for Volumio
 #
@@ -44,7 +44,11 @@ from moode_albumart import AlbumartAnimator
 from moode_spectrum import SpectrumOutput
 from moode_random import RandomControl
 import moode_display
-from moode_configfileparser import Volumio_ConfigFileParser, EXTENDED_CONF, METER_VISIBLE, SPECTRUM_VISIBLE, COLOR_DEPTH, POSITION_TYPE, POS_X, POS_Y, START_ANIMATION, METER_FADE
+from moode_configfileparser import Volumio_ConfigFileParser, EXTENDED_CONF, METER_VISIBLE, SPECTRUM_VISIBLE, COLOR_DEPTH, POSITION_TYPE, POS_X, POS_Y, POSITION_APPLY, START_ANIMATION, METER_FADE
+
+# cles du decalage du compteur dans la configuration de PeppyMeter (meter.x / meter.y de meters.txt)
+METER_X_KEY = globals().get('METER_X', 'meter.x')
+METER_Y_KEY = globals().get('METER_Y', 'meter.y')
 
 # duree maximale du fondu entre deux compteurs (secondes) ; au-dela il est abrege
 FADE_MAX_SECONDS = 3.0
@@ -76,6 +80,8 @@ class CallBack:
         self.first_run = True
         self.use_sdl2 = sdl2
         self._update_errors = 0     # erreurs deja affichees dans peppy_meter_update
+        self.position_offset = (0, 0)   # decalage position.x / position.y injecte dans la configuration de PeppyMeter
+        self._offset_warned = False
         # fondu entre compteurs : option meter.fade de config.txt (True par defaut)
         self.fade_enabled = bool(meter_config_volumio.get(METER_FADE, True))
         
@@ -130,6 +136,29 @@ class CallBack:
             self.fade_enabled = False
             self.show_new_screen(meter)
 
+    def check_position_offset(self, meter):
+        """ Verifie que PeppyMeter a bien repris position.x / position.y dans meter_x / meter_y du compteur ;
+        sinon le fond et le premier plan ne sont pas decales : message unique sur stderr. """
+        if self._offset_warned or self.position_offset == (0, 0):
+            return
+        expected = self.position_offset
+        section = self.meter_config.get(self.meter_config[METER])
+        if isinstance(section, dict):
+            expected = (section.get(METER_X_KEY), section.get(METER_Y_KEY))
+        if self.meter_offset(meter) != expected:
+            self._offset_warned = True
+            print("moode_peppymeter : PeppyMeter n'a pas repris position.x / position.y dans meter_x / meter_y "
+                  "(compteur : %s, attendu : %s) : fond et premier plan non decales"
+                  % (self.meter_offset(meter), expected), file=sys.stderr)
+
+    @staticmethod
+    def meter_offset(meter):
+        """ Decalage (meter_x, meter_y) que PeppyMeter applique aux composants du compteur ; None si indisponible. """
+        try:
+            return int(meter.meter_x), int(meter.meter_y)
+        except (AttributeError, TypeError, ValueError):
+            return None
+
     def peppy_meter_start(self, meter):
         # print('start')
         try:
@@ -138,6 +167,7 @@ class CallBack:
                 # section absente de meters.txt : pas d'options etendues
                 meter_section_volumio = {EXTENDED_CONF: False}
             animation = self.meter_config_volumio[START_ANIMATION]
+            self.check_position_offset(meter)
 
             # fadeIn new screen to old
             clock = Clock()
@@ -172,7 +202,9 @@ class CallBack:
             # start albumart animator
             self.album_animator = None
             try:
-                self.album_animator = AlbumartAnimator(self.util, self.meter_config_volumio)
+                # pochette et textes suivent le decalage du compteur (meter_x, meter_y), comme ses composants
+                self.album_animator = AlbumartAnimator(self.util, self.meter_config_volumio,
+                                                       meter_offset=self.meter_offset(meter))
                 self.album_animator.start()
             except Exception:
                 report_error("demarrage de la pochette impossible")
@@ -282,12 +314,8 @@ def meter_thread(arg, meter_config_volumio):
         #step for screen sizing
         step = int((screen_w * 0.04)+0.5)
                  
-        if meter_config_volumio[POSITION_TYPE] == "center":
-            screen_x = (screenshot.get_width() - screen_w)/2
-            screen_y = (screenshot.get_height() - screen_h)/2
-        else:
-            screen_x = meter_config_volumio[POS_X]
-            screen_y = meter_config_volumio[POS_Y]
+        screen_x, screen_y = window_position(meter_config_volumio, screenshot.get_width(), screenshot.get_height(),
+                                             screen_w, screen_h)
         aspect = screen_h / screen_w
         
         # use own isplay init with option HIDDEN to prevent black blizzard
@@ -357,6 +385,42 @@ def meter_thread(arg, meter_config_volumio):
     pm.exit()
 
     
+def window_position(meter_config_volumio, desktop_w, desktop_h, screen_w, screen_h):
+    """ Position de la fenetre sur le bureau (SDL2) : centree, ou aux coordonnees position.x / position.y avec
+    position.apply = window. Avec position.apply = content (defaut), position.x / position.y decalent les elements
+    dans la fenetre (voir apply_position_offset) : la fenetre reste en (0, 0), sinon le decalage serait double. """
+    if meter_config_volumio[POSITION_TYPE] == "center":
+        return (desktop_w - screen_w) / 2, (desktop_h - screen_h) / 2
+    if meter_config_volumio.get(POSITION_APPLY, "content") == "window":
+        return meter_config_volumio[POS_X], meter_config_volumio[POS_Y]
+    return 0, 0
+
+
+_position_applied = False
+
+
+def apply_position_offset(meter_config, meter_config_volumio):
+    """ position.x / position.y (config.txt, position.type = custom) decalent TOUS les elements : fond, premier plan,
+    aiguilles, pochette et textes. On les ajoute au decalage meter.x / meter.y de chaque compteur dans la configuration
+    de PeppyMeter, avant la creation des compteurs : PeppyMeter les applique alors a tous ses composants, comme il le
+    fait pour meter_x et meter_y, et la pochette et les textes suivent (voir CallBack.meter_offset).
+    Retourne le decalage applique. """
+    global _position_applied
+    if _position_applied or meter_config_volumio[POSITION_TYPE] == "center" \
+            or meter_config_volumio.get(POSITION_APPLY, "content") != "content":
+        return (0, 0)
+    dx, dy = meter_config_volumio[POS_X], meter_config_volumio[POS_Y]
+    if not (dx or dy):
+        return (0, 0)
+    _position_applied = True
+    for name in meter_config.get(METER_NAMES) or []:
+        section = meter_config.get(name)
+        if isinstance(section, dict):
+            section[METER_X_KEY] = int(section.get(METER_X_KEY) or 0) + dx
+            section[METER_Y_KEY] = int(section.get(METER_Y_KEY) or 0) + dy
+    return (dx, dy)
+
+
 def protect_meter_run(vumeter):
     """ Vumeter.run() lit self.meter puis l'utilise. Si Vumeter.stop() (thread de changement de
     compteur) supprime self.meter entre les deux, une AttributeError sort dans la boucle principale :
@@ -463,6 +527,7 @@ if __name__ == "__main__":
     pm.dependent = callback.peppy_meter_update
     pm.meter.malloc_trim = callback.trim_memory
     protect_meter_run(pm.meter)
+    callback.position_offset = apply_position_offset(pm.util.meter_config, meter_config_volumio)
     pm.malloc_trim = callback.exit_trim_memory
             
     # start display output until break       

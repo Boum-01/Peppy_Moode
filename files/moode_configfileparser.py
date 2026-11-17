@@ -26,9 +26,13 @@ FONT_BOLD = "font.bold"
 POSITION_TYPE = "position.type"
 POS_X = "position.x"
 POS_Y = "position.y"
+POSITION_APPLY = "position.apply"      # "content" (defaut) : position.x/y decalent tous les elements ; "window" : deplacent la fenetre
 
 EXTENDED_CONF = "config.extend"
 METER_VISIBLE = "meter.visible"
+METER_X = "meter.x"                    # decalage du compteur dans l'ecran (option standard de PeppyMeter)
+METER_Y = "meter.y"
+OVERLAY_RELATIVE = "overlay.relative"  # positions de la pochette et des textes relatives au compteur (defaut : True)
 ALBUMART_POS = "albumart.pos"
 ALBUMART_DIM = "albumart.dimension"
 ALBUMART_MSK = "albumart.mask"
@@ -113,6 +117,11 @@ class Volumio_ConfigFileParser(object):
             self.meter_config_volumio[POS_Y] = c.getint(CURRENT, POS_Y)
         except:
             self.meter_config_volumio[POS_Y] = 0
+        try:
+            apply_mode = c.get(CURRENT, POSITION_APPLY).strip().lower()
+            self.meter_config_volumio[POSITION_APPLY] = apply_mode if apply_mode in ("content", "window") else "content"
+        except:
+            self.meter_config_volumio[POSITION_APPLY] = "content"
 
         try:
             self.meter_config_volumio[FONT_PATH] = c.get(CURRENT, FONT_PATH)
@@ -174,6 +183,18 @@ class Volumio_ConfigFileParser(object):
             d[METER_VISIBLE] = config_file.getboolean(section, METER_VISIBLE)
         except:
             d[METER_VISIBLE] = True
+        try:
+            d[METER_X] = config_file.getint(section, METER_X)
+        except:
+            d[METER_X] = 0
+        try:
+            d[METER_Y] = config_file.getint(section, METER_Y)
+        except:
+            d[METER_Y] = 0
+        try:
+            d[OVERLAY_RELATIVE] = config_file.getboolean(section, OVERLAY_RELATIVE)
+        except:
+            d[OVERLAY_RELATIVE] = True
         try:
             spl = config_file.get(section, ALBUMART_POS).split(',')
             d[ALBUMART_POS] =  (int(spl[0]), int(spl[1]))
