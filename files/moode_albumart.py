@@ -1,26 +1,17 @@
 ﻿# Adaptation pour moOde audio, dérivée de volumio_albumart.py
 # (Copyright 2021 PeppyMeter for Volumio by 2aCD)
+# Copyright 2026 PeppyMeter for Moode by Boum-01
 #
 # Ce module remplace le thread AlbumartAnimator basé sur socket.io par un
-# thread qui surveille le fichier de métadonnées de moOde (LCD.TXT, ou plus
-# récemment /var/local/www/currentsong.txt), et alimente le même pipeline de
-# rendu (ImageTitleFactory / TextAnimator) que la version Volumio d'origine.
+# thread qui surveille le fichier de métadonnées de moOde (LCD.TXT, ou
+# currentsong.txt), et alimente le même pipeline de rendu 
+# (ImageTitleFactory / TextAnimator) que la version Volumio d'origine.
 #
 # Le "temps restant" (TIME_REMAINING_POS) n'est pas dans LCD.TXT (pas de
 # seek/duration) : il est géré séparément par MpdTimePoller (voir
 # moode_time_poller.py), qui interroge MPD directement et n'est démarré
 # que si le skin utilise TIME_REMAINING_POS. Dépendance : python-mpd2.
 #
-# Version corrigée :
-#  - suppression du breakpoint() oublié
-#  - ajout de init_time() / render_time() (appelées mais absentes)
-#  - imports manquants (requests, cairosvg optionnel)
-#  - chargement des polices robuste (chemins, valeurs None, police digitale)
-#  - URL de pochette adaptée à moOde, avec délai d'expiration et gestion d'erreur
-#  - recherche des icônes de format dans le dossier local "format-icons"
-#  - verrous pour limiter les dessins simultanés sur l'écran pygame
-#  - recoloration des icônes sans boucle pixel par pixel
-#  - robustesse (valeurs None, dimensions absentes, exceptions dans les threads)
 
 import io
 import os
