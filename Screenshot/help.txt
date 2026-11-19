@@ -1,5 +1,5 @@
 Folder for screenshots
 the screeshot show the displays of the Peppy_moode programs.
-since a use à 1600x600 screen there is not sample avalianble on GELO5 volumio repositori but whe can use smaller one.
-hitout meter.txt modification they ars sticked to 0,0 ofset in the screen . they may be centered by seting the good value with meter.X, meter.y
-((screen size - background size) / 2)
+since a use à 1600x600 screen there is not sample avaliable on GELO5 volumio repositorie but whe can use smaller one.
+Whitout meter.txt modification they ares sticked to 0,0 offset in the screen . 
+They may be centered by setting the good value with meter.X, meter.y ((screen size - background size) / 2)
