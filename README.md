@@ -140,7 +140,7 @@ Place your icons (`flac.svg`, `mp3.svg`, `dsd.svg`, `wav.svg`, etc.) in the `for
 
 If no icon is provided, the format area will remain empty—this is entirely optional.
 
-## Arrêt de l'affichage par moOde / moOde isplay stop
+## Arrêt de l'affichage par moOde / moOde display stop
 
 (Fr)
 Sur moOde, le retour à l'interface web arrête l'affichage par `pkill -f peppymeter.py` (ou `pkill -f spectrum.py`
@@ -157,6 +157,12 @@ Les options propres à cette version (`meter.fade`, `random.change.title`, posit
 position des textes, temps restant, spectre...) sont décrites dans `config-options.example.txt`.
 Le programme lit les informations du morceau dans `/var/local/www/currentsong.txt` et le temps restant auprès de
 MPD (`localhost:6600`).
+infos affichable :
+    Pochette album    
+    nom Album / titre du morceau / artiste
+    type de fichier (Mp3 Flac, ogg, radio...)
+    fréquene d'échantillonage
+    temps restant
 
 (En)
 The options specific to this version (`meter.fade`, `random.change.title`, album art position and dimensions,
@@ -164,6 +170,13 @@ text positioning, remaining time, spectrum, etc.) are described in `config-optio
 The program reads track information from `/var/local/www/currentsong.txt` and the remaining time from
 MPD (`localhost:6600`).
 
+diplayed info :
+    albumart    
+    playinfo:  Album / title / artiste
+    file type (Mp3 Flac, ogg, radio...)
+    samplerate
+    time.remaining
+    
 ## Désinstallation / Uninstalling
 
 (Fr)
