@@ -1,21 +1,26 @@
+# (fr)
 # Options reconnues par la version moOde de PeppyMeter.
 # Ce fichier n'est qu'un exemple : copiez les lignes utiles dans la section indiquee
 # de votre config.txt ou de votre meters.txt (PeppyMeter ignore les options qu'il ne connait pas).
 # Les valeurs ci-dessous sont les valeurs exemple.
-
+# (en)
+# Options recognized by the mod version of PeppyMeter.
+# This file is only an example: copy the relevant lines into the indicated section
+# of your config.txt or meters.txt file (PeppyMeter ignores options it doesn't recognize).
+# The values ​​below are example values.
 # ---------------------------------------------------------------------------
 # config.txt, section [current] options standard de PeppyMeter
 # ---------------------------------------------------------------------------
- meter = random                 # compteur unique, "random", ou liste "a,b,c" (option standard de PeppyMeter)
- random.meter.interval = 60     # secondes entre deux changements (option standard de PeppyMeter)
- random.change.title = False    # avec "random" ou une liste : changer de compteur a chaque nouveau morceau
- start.animation = False        # animation a l'ouverture et a la fermeture de la fenetre (SDL2)
- color.depth = 32
- position.type = center         "center", ou "custom" avec position.x et position.y
- position.x = 0
- position.y = 0
+ meter = random                 # compteur unique, "random", ou liste "a,b,c" (option standard de PeppyMeter/PeppyMeter standard option)
+ random.meter.interval = 60     # secondes entre deux changements (option standard de PeppyMeter/PeppyMeter standard option)
+ random.change.title = False    # avec "random" ou une liste : changer de compteur a chaque nouveau morceau PeppyMeter standard option
+ start.animation = False        # animation a l'ouverture et a la fermeture de la fenetre (SDL2) PeppyMeter standard option
+ color.depth = 32               
+ position.type = center         # "center", ou "custom" avec position.x et position.y PeppyMeter standard option
+ position.x = 0                 # PeppyMeter standard option
+ position.y = 0                 # PeppyMeter standard option
 # ---------------------------------------------------------------------------
-# extention de config.txt, section [current]
+# extention config.txt for Moode_Peppymeter, section [current]
 # ---------------------------------------------------------------------------
 font.path = /usr/local/share/fonts	# répertoire des fonts
 font.light = /Lato-Light.ttf		# nom du fichier font light
@@ -50,7 +55,7 @@ screen.bgr = McIntosh.jpg
 # Paramètres généraux
 config.extend = True / False 		# True : active les options / False ou paramètre absent : désactive les options
 meter.visible  = True / False		# False : n'affiche que la pochette, les textes et le spectromètre
-meter.fade = True        		# fondu entre deux vu-metres ; False = changement immediat
+meter.fade = True            		# fondu entre deux vu-metres ; False = changement immediat
 
 # Polices
 font.size.light	= 25			# taille de la font light en pixel
