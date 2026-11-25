@@ -22,7 +22,7 @@
 # ---------------------------------------------------------------------------
 # extention config.txt for Moode_Peppymeter, section [current]
 # ---------------------------------------------------------------------------
-font.path = /usr/local/share/fonts	# répertoire des fonts
+font.path = /opt/peppy_moode/fonts	# répertoire des fonts
 font.light = /Lato-Light.ttf		# nom du fichier font light
 font.regular = /Lato-Regular.ttf	# nom du fichier font regular
 font.bold = /Lato-Bold.ttf		# nom du fichier font bold
