@@ -48,7 +48,7 @@ DEFAULT_ALBUMART_PATH = "/images/default-album-cover.png"  # pochette si aucune 
 URL_SAFE_CHARS = "/:%?&=+,;@!$'()*~#[]"                 # '%' conservé : pas de double encodage
 HTTP_TIMEOUT = (3, 10)                                  # (connexion, lecture) en secondes
 DEFAULT_FONT_DIR = ''
-LEGACY_VOLUMIO_ICON_DIR = '/opt/peppy_moode/fonts/format-icons'
+LEGACY_VOLUMIO_ICON_DIR = '/opt/peppy_moode/format-icons'
 DIGI_FONT_NAMES = ('DSEG7Classic-Light.ttf', 'DSEG7Classic-Italic.ttf')
 DIGI_FONT_DIRS = ('/opt/peppy_moode/fonts',)        # en plus du dossier "fonts" du module
 
